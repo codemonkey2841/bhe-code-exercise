@@ -71,16 +71,15 @@ class Sieve:
         :rtype: tuple
         """
 
-        nums = [True] * (n + 1)
-        nums[0] = False
-        nums[1] = False
+        nums = bytearray(b"\x01" * (n + 1))
+        nums[0] = 0
+        nums[1] = 0
         p = 2
 
-        while p**2 <= n:
+        while p ** 2 <= n:
             if nums[p]:
                 # mark all multiples of p as not prime
-                for i in range(p**2, n + 1, p):
-                    nums[i] = False
+                nums[p ** 2 :: p] = b"\x00" * (((n - p ** 2) // p) + 1) # fancy math to ensure the byte slice is the correct size
 
             p += 1
 

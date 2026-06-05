@@ -82,7 +82,6 @@ class SieveTest(unittest.TestCase):
             self.sieve.sieve(30),
         )
 
-    @unittest.skip
     def test_sieve_extreme_case(self) -> None:
         """
         not required, just a fun challenge
