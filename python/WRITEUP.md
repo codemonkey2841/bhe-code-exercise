@@ -171,8 +171,31 @@ extreme end (with the expectation that it would increase exponentially with
 `n`) to 2MB at the extreme end with a trending pattern of not getting much
 larger.
 
+## Phase N: lucy_hedgehog
+
+During my research into bounding formulae for right-sizing the sieve list
+during Phase 0 I discovered a shortcut for this calculation, commonly referred
+to as the lucy_hedgehog algorithm. The methodology for this is calculating the
+bounds as I already have (using Rosser's bounds), then use some arithmetic to
+accurately count the number of primes that exist from 2 to the lower bounds.
+Then run the sieve up to the square root of your ultimate `n`. This gives you
+a significantly smaller calculation to perform in order to get a list of
+primes to eliminate multiples of. Then you run the sieve starting at the lower
+bound, going to the upper bound.
+
+As you may suspect, this will cause a _significant_ reduction in time and, if I
+hadn't already implemented the segmentation optimization, would reduce memory
+usage. However, these reductions would only actually be significant for
+extremely large numbers (I'm guessing you'd really start to see the reduction
+at n>10^9).
+
+Considering the edge case on the large side is 10^8 per the assessment brief
+in the README, this isn't a worthwhile pursuit. If I was expecting to use this
+on larger numbers, this would be my next step.
+
 ## References
 
 - https://en.wikipedia.org/wiki/Sieve_of_Eratosthenes
 - https://en.wikipedia.org/wiki/Prime_number_theorem
 - https://www.geeksforgeeks.org/dsa/how-is-the-time-complexity-of-sieve-of-eratosthenes-is-nloglogn/
+- https://math.berkeley.edu/~elafandi/euler/p10/
