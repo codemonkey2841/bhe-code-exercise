@@ -64,6 +64,14 @@ class SieveTest(unittest.TestCase):
     def test_sieve_happy_path_large(self) -> None:
         self._assert_fuzz(low=10_000, high=100_000, sample_size=10, seed=3)
 
+    def test_sieve_segment_boundary(self) -> None:
+        lo, hi = 22_950, 23_050
+        primes = [self.sieve.nth_prime(i) for i in range(lo, hi)]
+        for idx, p in zip(range(lo, hi), primes):
+            self.assertTrue(_is_prime(p), f"nth_prime({idx}) = {p} is not prime")
+        for a, b in zip(primes, primes[1:]):
+            self.assertLess(a, b, "nth_prime must be strictly increasing")
+
     def test_sieve_one_millionth_prime(self) -> None:
         self.assertEqual(15_485_867, self.sieve.nth_prime(1_000_000))
 
@@ -79,20 +87,38 @@ class SieveTest(unittest.TestCase):
     def test_sieve_helper_small_cases(self) -> None:
         self.assertEqual(
             [],
-            self.sieve.sieve(1)
+            self.sieve.sieve(1, 1)
         )
         self.assertEqual(
             [2],
-            self.sieve.sieve(2)
+            self.sieve.sieve(2, 2)
         )
         self.assertEqual(
             [2, 3, 5, 7],
-            self.sieve.sieve(10)
+            self.sieve.sieve(2, 10)
         )
         self.assertEqual(
             [2, 3, 5, 7, 11, 13, 17, 19, 23, 29],
-            self.sieve.sieve(30),
+            self.sieve.sieve(2, 30),
         )
+        self.assertEqual(
+            [101, 103, 107, 109, 113, 127],
+            self.sieve.sieve(100, 130, base_primes=[2, 3, 5, 7, 11]),
+        )
+
+    def test_sieve_helper_requires_base_primes(self) -> None:
+        with self.assertRaises(ValueError):
+            self.sieve.sieve(100, 130)
+
+    def test_sieve_rossers_bounds(self) -> None:
+        for n in range(5):
+            with self.subTest(n=n):
+                self.assertEqual({"lower": 2, "upper": 13}, self.sieve.rossers_bounds(n))
+        for n, expected in [(19, 71), (99, 541), (2_000, 17_393)]:
+            with self.subTest(n=n):
+                bounds = self.sieve.rossers_bounds(n)
+                self.assertGreaterEqual(bounds["upper"], expected)
+                self.assertLessEqual(bounds["lower"], expected)
 
     def test_sieve_extreme_case(self) -> None:
         """

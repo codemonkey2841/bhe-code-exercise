@@ -54,33 +54,71 @@ class Sieve:
             raise ValueError("n must be a non-negative integer")
 
         bounds = self.rossers_bounds(n)
-        numbers = self.sieve(bounds["upper"])
+        upper = bounds["upper"]
+        sqrt_upper = int(upper**0.5) + 1
 
-        if len(numbers) < n:
-            raise IndexError("sieve didn't generate enough primes")
+        window = 1 << 18  # this is 256KB, this _should_ fit inside L2 cache
 
-        return numbers[n]
+        base_primes = []
+        primes_seen = 0
+        low = 2
+        while low <= upper:
+            high = min(low + window - 1, upper)
+            segment_primes = self.sieve(low, high, base_primes)
+            base_primes.extend(p for p in segment_primes if p <= sqrt_upper)
+            if primes_seen + len(segment_primes) > n:
+                return segment_primes[n - primes_seen]
+            primes_seen += len(segment_primes)
+            low = high + 1
 
-    def sieve(self, n: int) -> tuple:
+        raise IndexError("Something went terribly wrong")
+
+    def sieve(
+        self, low: int, high: int, base_primes: list[int] | None = None
+    ) -> list[int]:
         """
-        Given a limit n, calculate which positive integers are prime utilizing
-        the Sieve of Eratosthenes
+        Given the bounds "low" and "high", calculate which positive integers
+        are prime utilizing the Sieve of Eratosthenes
 
-        :param int n: the upper bound of primes to calculate using the sieve
+        :param int low: the lower bound of primes to calculate using the sieve
+        :param int high: the upper bound of primes to calculate using the sieve
+        :param list[int]|None base_primes: a list of primes from lower segments
         :return: a tuple of all prime numbers less than the given limit
         :rtype: tuple
         """
 
-        nums = bytearray(b"\x01" * (n + 1))
-        nums[0] = 0
-        nums[1] = 0
-        p = 2
+        # Base case - the original, simple sieve algorithm
+        if low <= 2:
+            nums = bytearray(b"\x01" * (high + 1))
+            nums[0] = 0
+            nums[1] = 0
+            p = 2
 
-        while p ** 2 <= n:
-            if nums[p]:
-                # mark all multiples of p as not prime
-                nums[p ** 2 :: p] = b"\x00" * (((n - p ** 2) // p) + 1) # fancy math to ensure the byte slice is the correct size
+            while p**2 <= high:
+                if nums[p]:
+                    # mark all multiples of p as not prime
+                    nums[p**2::p] = b"\x00" * (
+                        ((high - p**2) // p) + 1
+                    )  # fancy math to ensure the byte slice is the correct size
 
-            p += 1
+                p += 1
 
-        return [i for i, v in enumerate(nums) if v]
+            return [i for i, v in enumerate(nums) if v]
+
+        # safeguard
+        if base_primes is None:
+            raise ValueError("base_primes required when low > 2")
+
+        # extended segment algorithm - due to the properties of prime number
+        #    math, you really only need to iterate through `base_primes` to
+        #    eliminate composites in the current segment.
+        nums = bytearray(b"\x01" * (high - low + 1))
+        for p in base_primes:
+            if p**2 > high:
+                break
+            start = max(p**2, ((low + p - 1) // p) * p)
+            nums[start - low::p] = b"\x00" * (
+                ((high - start) // p) + 1
+            )  # fancy math to ensure the byte slice is the correct size
+
+        return [low + i for i, v in enumerate(nums) if v]

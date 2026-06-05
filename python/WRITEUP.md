@@ -113,6 +113,64 @@ As expected, I saw a significant improvement in both memory usage and execution
 time. I still need to squeeze more out of this to get results into a production
 feasible range...
 
+## Phase 2: Segmentation Optimization
+
+Memory usage is still our biggest issue. If I can work through the list in
+segments instead of running the whole list at once that will limit the amount
+of memory needed to a nearly static rate for all large values of n.  The value
+to use is for segment size is pretty arbitrary and the optimal value can vary
+greatly depending on the hardware the function is being run on. Using a value
+of 256k is small enough that it will fit in most modern L2 caches (which can
+potentially speed up calculations), but big enough that I'm not causing too
+much overhead with segment management.
+
+### Test Results
+
+Skipping n=100,000,000 test:
+```
+$ python -m unittest test_sieve.py
+.s........
+----------------------------------------------------------------------
+Ran 10 tests in 5.606s
+
+OK (skipped=1)                                                           [5.8s]
+```
+
+Full test suite:
+```
+$ python -m unittest test_sieve.py
+..........
+----------------------------------------------------------------------
+Ran 10 tests in 69.960s
+
+OK                                                                    [1m10.2s]
+```
+
+### Performance
+
+```
+Label:     segmentation-optimization
+Timestamp: 2026-06-05T20:21:25+00:00
+Prev:      bytearray-optimization (2026-06-05T16:38:06+00:00)
+
+           n        time    peak mem     vs prev  ok
+         100      21.3us       3.6KB        +14%  y
+      10,000       3.0ms     499.9KB         +3%  y
+   1,000,000     424.2ms       1.8MB         -1%  y
+  10,000,000       4.99s       1.9MB         -5%  y
+ 100,000,000      64.27s       2.0MB         +2%  y
+ ```
+
+There is no neglible reduction in time, but for lower values that makes sense
+since this optimization does nothing for n<128k (the segment window size). For
+the larger values I _could've_ seen a potential reduction by forcing the
+operations to occur in the L2 cache but there are a lot of external factors
+that could affect this. The important part is that it didn't _add_ time. But
+the key improvement here is **huge**. We've gone from GB memory usage on the
+extreme end (with the expectation that it would increase exponentially with
+`n`) to 2MB at the extreme end with a trending pattern of not getting much
+larger.
+
 ## References
 
 - https://en.wikipedia.org/wiki/Sieve_of_Eratosthenes
