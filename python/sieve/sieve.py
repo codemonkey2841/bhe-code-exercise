@@ -14,13 +14,6 @@ class Sieve:
     a 0-based lookup of the nth prime (nth_prime(0) == 2).
     """
 
-    def __init__(self) -> None:
-        """
-        Initialization method - currently unneeded, will retain until I'm sure
-        I won't need it.
-        """
-        pass
-
     def rossers_bounds(self, n: int) -> dict:
         """
         Rosser's bounds apply to the n-th prime for n >= 6. We use
@@ -71,7 +64,7 @@ class Sieve:
             primes_seen += len(segment_primes)
             low = high + 1
 
-        raise IndexError("Something went terribly wrong")
+        raise IndexError(f"{n}th prime not found before reaching limit {upper}")
 
     def sieve(
         self, low: int, high: int, base_primes: list[int] | None = None
