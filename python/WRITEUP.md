@@ -49,9 +49,10 @@ Timestamp: 2026-06-05T14:01:38+00:00
 The key takeaway here is that as n increases, peak mem and time increase
 expontentially. I need to find ways to shave that down... Significantly
 
-Another consideration I need to be aware of is that python integers are int64.
+~~Another consideration I need to be aware of is that python integers are int64.
 This isn't a huge concern for the given test values, but for larger prime
-numbers we may need to account for that limitation.
+numbers we may need to account for that limitation.~~  This is no longer valid in
+python3 as all integers are unbound with respect to the interpreter.
 
 ## Phase 1 - bytearray optimization
 
